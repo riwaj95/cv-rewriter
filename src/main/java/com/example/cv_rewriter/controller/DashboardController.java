@@ -14,8 +14,6 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.util.concurrent.CompletableFuture;
-
 @Controller
 public class DashboardController {
 
@@ -29,7 +27,6 @@ public class DashboardController {
 
     @GetMapping("/dashboard")
     public String dashboardPage(Model model, @AuthenticationPrincipal OAuth2User user) {
-        // Add user info to the model
         if (user != null) {
             String name = user.getAttribute("name");
             String email = user.getAttribute("email");
@@ -40,13 +37,13 @@ public class DashboardController {
     }
 
     @PostMapping("/process-cv")
-    public CompletableFuture<ResponseEntity<byte[]>> processCv(
+    public ResponseEntity<byte[]> processCv(
             @RequestParam("jobDescription") String jobDescription,
             @RequestParam("cvFile") MultipartFile cvFile,
             @AuthenticationPrincipal OAuth2User user,
-            Model model) {
+            Model model) throws Exception {
 
-        // Add user info to model for the view
+        // Add user info to model
         if (user != null) {
             String name = user.getAttribute("name");
             String email = user.getAttribute("email");
@@ -54,31 +51,24 @@ public class DashboardController {
             model.addAttribute("userEmail", email != null ? email : "");
         }
 
-        return CompletableFuture.supplyAsync(() -> {
-            try {
-                // Validate input
-                if (cvFile.isEmpty()) {
-                    throw new IllegalArgumentException("Please upload a CV file");
-                }
+        // Validate input
+        if (cvFile.isEmpty()) {
+            throw new IllegalArgumentException("Please upload a CV file");
+        }
 
-                if (!"application/pdf".equals(cvFile.getContentType())) {
-                    throw new IllegalArgumentException("Only PDF files are allowed");
-                }
+        if (!"application/pdf".equals(cvFile.getContentType())) {
+            throw new IllegalArgumentException("Only PDF files are allowed");
+        }
 
-                // Process files asynchronously
-                String cvText = pdfService.extractTextFromPdf(cvFile);
-                String enhancedCv = openAIService.enhanceCv(jobDescription, cvText);
-                byte[] newPdf = pdfService.generatePdf(enhancedCv);
+        // Process files
+        String cvText = pdfService.extractTextFromPdf(cvFile);
+        String enhancedCv = openAIService.enhanceCv(jobDescription, cvText);
+        byte[] newPdf = pdfService.generatePdf(enhancedCv);
 
-                // Return PDF for download
-                return ResponseEntity.ok()
-                        .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"enhanced_cv.pdf\"")
-                        .contentType(MediaType.APPLICATION_PDF)
-                        .body(newPdf);
-
-            } catch (Exception e) {
-                throw new RuntimeException("CV processing failed: " + e.getMessage(), e);
-            }
-        });
+        // Return PDF for download
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"enhanced_cv.pdf\"")
+                .contentType(MediaType.APPLICATION_PDF)
+                .body(newPdf);
     }
 }
