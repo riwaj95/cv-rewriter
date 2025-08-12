@@ -1,97 +1,125 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
 <head>
-    <title>CV Editor</title>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Upload CV</title>
     <style>
         body {
             font-family: Arial, sans-serif;
-            max-width: 800px;
+            max-width: 600px;
             margin: 0 auto;
             padding: 20px;
-            background: #f5f8fa;
+            background-color: #f8f9fa;
         }
-        header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
+        .header {
             margin-bottom: 30px;
             padding-bottom: 15px;
             border-bottom: 1px solid #ddd;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
         }
-        h1 {
-            color: #1a73e8;
+        .header h1 {
             margin: 0;
         }
-        .user-info {
-            text-align: right;
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
         }
-        .btn {
-            background: #1a73e8;
+        .form-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+        }
+        textarea {
+            width: 100%;
+            height: 150px;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            resize: vertical;
+        }
+        input[type="file"] {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            background: #f8f9fa;
+        }
+        button {
+            background: #4285F4;
+            color: white;
+            padding: 12px 25px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        .success {
+            color: #0f9d58;
+            margin-top: 15px;
+            padding: 10px;
+            background: #e6f4ea;
+            border-radius: 4px;
+        }
+        .user-info {
+            font-size: 14px;
+            color: #5f6368;
+            margin-bottom: 5px;
+        }
+        .logout-btn {
+            background: #ea4335;
             color: white;
             padding: 8px 15px;
             border: none;
             border-radius: 4px;
             cursor: pointer;
             text-decoration: none;
-            display: inline-block;
             font-size: 14px;
         }
-        .btn-login {
-            background: #0d9d58;
-        }
-        .card {
-            background: white;
-            padding: 25px;
-            border-radius: 8px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-            margin-bottom: 20px;
-        }
-        .card h2 {
-            margin-top: 0;
-            color: #202124;
-        }
-        .card p {
-            color: #5f6368;
-        }
-        .login-prompt {
-            text-align: center;
-            padding: 40px 20px;
-        }
-        .login-prompt h2 {
-            margin-top: 0;
+        .user-section {
+            text-align: right;
         }
     </style>
 </head>
 <body>
-<header>
-    <h1>CV Editor</h1>
-    <div class="user-info" th:if="${#authentication.principal != null}">
-        <div th:text="${name}"></div>
-        <a href="/logout" class="btn">Logout</a>
+<div class="header">
+    <div>
+        <h1>Upload Your CV</h1>
+        <div class="user-info">
+            Logged in as: <span th:text="${userName}">User</span>
+            <span th:if="${userEmail}" th:text="'(' + ${userEmail} + ')'"></span>
+        </div>
     </div>
-</header>
-
-<div th:if="${#authentication.principal == null}">
-    <div class="login-prompt card">
-        <h2>Welcome to CV Editor</h2>
-        <p>Login to enhance your CV with AI</p>
-        <a href="/oauth2/authorization/google" class="btn btn-login">Login with Google</a>
+    <div class="user-section">
+        <form action="/logout" method="post">
+            <button type="submit" class="logout-btn">Logout</button>
+        </form>
     </div>
 </div>
 
-<div th:if="${#authentication.principal != null}">
-    <div class="card">
-        <h2>Create Enhanced CV</h2>
-        <p>Upload your CV and job description to get an AI-enhanced version</p>
-        <a href="/editor" class="btn">Start Editing</a>
-    </div>
+<div class="container">
+    <form method="post" action="/process-cv" enctype="multipart/form-data">
+        <div class="form-group">
+            <label for="jobDescription">Job Description:</label>
+            <textarea id="jobDescription" name="jobDescription" placeholder="Paste job description here..." required></textarea>
+        </div>
 
-    <div class="card">
-        <h2>Recent Edits</h2>
-        <p>Your previous CV edits will appear here</p>
-    </div>
+        <div class="form-group">
+            <label for="cvFile">Upload Your CV (PDF only):</label>
+            <input type="file" id="cvFile" name="cvFile" accept=".pdf" required>
+        </div>
+
+        <button type="submit">Process CV</button>
+
+        <div th:if="${param.success}" class="success">
+            CV received successfully! Processing would happen here.
+        </div>
+    </form>
 </div>
 </body>
 </html>

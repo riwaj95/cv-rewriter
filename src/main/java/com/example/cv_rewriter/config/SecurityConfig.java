@@ -14,11 +14,19 @@ public class SecurityConfig{
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
+                .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(auth -> auth
                         .anyRequest().authenticated()
                 )
-                .oauth2Login(Customizer.withDefaults()
+                .oauth2Login(oauth -> oauth
+                        .defaultSuccessUrl("/dashboard", true)  // Ensure this is set
+                )
+
+                .logout(logout -> logout
+                        .logoutSuccessUrl("/login") // After logout, restart flow
+                        .permitAll()
                 );
+
         return http.build();
     }
 
