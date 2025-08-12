@@ -1,6 +1,7 @@
 package com.example.cv_rewriter.controller;
 
 import com.example.cv_rewriter.service.OpenAIService;
+import com.example.cv_rewriter.service.PdfService;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.pdmodel.PDPage;
 import org.apache.pdfbox.pdmodel.PDPageContentStream;
@@ -21,10 +22,11 @@ import java.io.ByteArrayOutputStream;
 @Controller
 public class CVController {
     private final OpenAIService openAiService;
-    private final Tika tika = new Tika();
+    private final PdfService pdfService;
 
-    public CVController(OpenAIService openAiService) {
+    public CVController(OpenAIService openAiService, PdfService pdfService) {
         this.openAiService = openAiService;
+        this.pdfService = pdfService;
     }
 
 
@@ -36,7 +38,7 @@ public class CVController {
     ) throws Exception {
 
         // 1. Extract CV text
-        String cvText = tika.parseToString(cvFile.getInputStream());
+        String cvText = pdfService.extractTextFromPdf(cvFile);
 
         // 2. Enhance CV using OpenAI
         String enhancedCv = openAiService.enhanceCv(cvText, jobDescription);

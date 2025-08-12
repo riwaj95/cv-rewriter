@@ -21,7 +21,8 @@ public class SecurityConfig{
                 .formLogin(form -> form.defaultSuccessUrl("/dashboard",true))
                 .oauth2Login(oauth -> oauth
                         .defaultSuccessUrl("/dashboard", true)  // Ensure this is set
-                );
+                )
+                .csrf(Customizer.withDefaults());
 
         return http.build();
     }
