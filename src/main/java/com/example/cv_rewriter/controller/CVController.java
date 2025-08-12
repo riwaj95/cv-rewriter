@@ -18,6 +18,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 
 @Controller
 public class CVController {
@@ -42,10 +43,10 @@ public class CVController {
 
         // 2. Enhance CV using OpenAI
         /*String enchancedCV = openAiService.enhanceCv(cvText,jobDescription);*/
-        String enhancedCv = "Result"+ cvText;
+        String enhancedCv = "Result "+ cvText + jobDescription;
 
         // 3. Create new PDF
-        byte[] pdfBytes = createPdf(enhancedCv);
+        byte[] pdfBytes = generatePdf(enhancedCv);
 
         // 4. Return as downloadable file
         return ResponseEntity.ok()
@@ -54,29 +55,40 @@ public class CVController {
                 .body(pdfBytes);
     }
 
-    private byte[] createPdf(String text) throws Exception {
-        try (PDDocument document = new PDDocument()) {
+    private byte[] generatePdf(String text) throws IOException {
+        try (PDDocument document = new PDDocument();
+             ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
+
             PDPage page = new PDPage(PDRectangle.A4);
             document.addPage(page);
 
-            PDPageContentStream contentStream = new PDPageContentStream(document, page);
-            contentStream.setFont(PDType1Font.COURIER_BOLD, 12);
-            contentStream.beginText();
-            contentStream.setLeading(14.5f);
-            contentStream.newLineAtOffset(50, 750);
+            // Create a filtered text that only contains supported characters
+            StringBuilder filteredText = new StringBuilder();
+            for (char c : text.toCharArray()) {
+                if (PDType1Font.HELVETICA.getEncoding().contains(c) || c == '\n') {
+                    filteredText.append(c);
+                }
+            }
+            String cleanText = filteredText.toString();
 
-            String[] lines = text.split("\n");
-            for (String line : lines) {
-                contentStream.showText(line);
-                contentStream.newLine();
+            try (PDPageContentStream contentStream = new PDPageContentStream(document, page)) {
+                contentStream.setFont(PDType1Font.HELVETICA, 12);
+                contentStream.beginText();
+                contentStream.setLeading(14.5f);
+                contentStream.newLineAtOffset(50, 750);
+
+                // Write each line
+                for (String line : cleanText.split("\n")) {
+                    contentStream.showText(line);
+                    contentStream.newLine();
+                }
+                contentStream.endText();
             }
 
-            contentStream.endText();
-            contentStream.close();
-
-            ByteArrayOutputStream baos = new ByteArrayOutputStream();
             document.save(baos);
             return baos.toByteArray();
         }
     }
+
+
 }
