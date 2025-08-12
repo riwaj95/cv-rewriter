@@ -6,7 +6,7 @@ import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.pdmodel.PDPage;
 import org.apache.pdfbox.pdmodel.PDPageContentStream;
 import org.apache.pdfbox.pdmodel.common.PDRectangle;
-import org.apache.tika.Tika;
+import org.apache.pdfbox.pdmodel.font.PDType1Font;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -38,10 +38,11 @@ public class CVController {
     ) throws Exception {
 
         // 1. Extract CV text
-        String cvText = pdfService.extractTextFromPdf(cvFile);
+        String cvText = pdfService.extractText(cvFile);
 
         // 2. Enhance CV using OpenAI
-        String enhancedCv = openAiService.enhanceCv(cvText, jobDescription);
+        /*String enchancedCV = openAiService.enhanceCv(cvText,jobDescription);*/
+        String enhancedCv = "Result"+ cvText;
 
         // 3. Create new PDF
         byte[] pdfBytes = createPdf(enhancedCv);
@@ -59,7 +60,7 @@ public class CVController {
             document.addPage(page);
 
             PDPageContentStream contentStream = new PDPageContentStream(document, page);
-            contentStream.setFont(null, 12);
+            contentStream.setFont(PDType1Font.COURIER_BOLD, 12);
             contentStream.beginText();
             contentStream.setLeading(14.5f);
             contentStream.newLineAtOffset(50, 750);

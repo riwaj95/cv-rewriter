@@ -1,51 +1,35 @@
 package com.example.cv_rewriter.service;
 
+import lombok.extern.slf4j.Slf4j;
 import org.apache.pdfbox.pdmodel.PDDocument;
-import org.apache.pdfbox.pdmodel.PDPage;
-import org.apache.pdfbox.pdmodel.PDPageContentStream;
-import org.apache.tika.Tika;
-import org.apache.tika.exception.TikaException;
+import org.apache.pdfbox.text.PDFTextStripperByArea;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 
+@Slf4j
 @Service
 public class PdfService {
 
-    //todo
-    public String extractTextFromPdf(MultipartFile file) throws IOException, TikaException {
-        Tika tika = new Tika();
-        tika.setMaxStringLength(-1); // No limit on text size
-        return tika.parseToString(file.getInputStream());
-    }
+    public static final String PDF_TEXT_EXTRACT_ERROR = "Failed to extract text from PDF";
 
-    public byte[] generatePdf(String content) throws IOException {
-        try (PDDocument document = new PDDocument();
-             ByteArrayOutputStream out = new ByteArrayOutputStream()) {
-
-            PDPage page = new PDPage();
-            document.addPage(page);
-
-            try (PDPageContentStream contentStream = new PDPageContentStream(document, page)) {
-                contentStream.beginText();
-                contentStream.setFont(null, 12);
-                contentStream.newLineAtOffset(50, 700);
-
-                // Split content into lines
-                String[] lines = content.split("\n");
-                for (String line : lines) {
-                    // Add each line to the PDF
-                    contentStream.showText(line);
-                    contentStream.newLineAtOffset(0, -15); // Move down for next line
+    public String extractText(MultipartFile multipartFile) {
+        StringBuilder extractedText = new StringBuilder();
+        try (PDDocument document = PDDocument.load(multipartFile.getInputStream())) {
+            document.getPages().forEach(page -> {
+                try {
+                    PDFTextStripperByArea stripper = new PDFTextStripperByArea();
+                    stripper.setSortByPosition(true);
+                    stripper.extractRegions(page);
+                    extractedText.append(stripper.getTextForRegion("region"));
+                } catch (IOException e) {
+                    throw new RuntimeException();
                 }
-
-                contentStream.endText();
-            }
-
-            document.save(out);
-            return out.toByteArray();
+            });
+        } catch (Exception ex) {
+            return PDF_TEXT_EXTRACT_ERROR;
         }
+        return extractedText.toString();
     }
 }
