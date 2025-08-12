@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>CV Editor</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f8fa;
+        }
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid #ddd;
+        }
+        h1 {
+            color: #1a73e8;
+            margin: 0;
+        }
+        .user-info {
+            text-align: right;
+        }
+        .btn {
+            background: #1a73e8;
+            color: white;
+            padding: 8px 15px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-block;
+            font-size: 14px;
+        }
+        .btn-login {
+            background: #0d9d58;
+        }
+        .card {
+            background: white;
+            padding: 25px;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        .card h2 {
+            margin-top: 0;
+            color: #202124;
+        }
+        .card p {
+            color: #5f6368;
+        }
+        .login-prompt {
+            text-align: center;
+            padding: 40px 20px;
+        }
+        .login-prompt h2 {
+            margin-top: 0;
+        }
+    </style>
+</head>
+<body>
+<header>
+    <h1>CV Editor</h1>
+    <div class="user-info" th:if="${#authentication.principal != null}">
+        <div th:text="${name}"></div>
+        <a href="/logout" class="btn">Logout</a>
+    </div>
+</header>
+
+<div th:if="${#authentication.principal == null}">
+    <div class="login-prompt card">
+        <h2>Welcome to CV Editor</h2>
+        <p>Login to enhance your CV with AI</p>
+        <a href="/oauth2/authorization/google" class="btn btn-login">Login with Google</a>
+    </div>
+</div>
+
+<div th:if="${#authentication.principal != null}">
+    <div class="card">
+        <h2>Create Enhanced CV</h2>
+        <p>Upload your CV and job description to get an AI-enhanced version</p>
+        <a href="/editor" class="btn">Start Editing</a>
+    </div>
+
+    <div class="card">
+        <h2>Recent Edits</h2>
+        <p>Your previous CV edits will appear here</p>
+    </div>
+</div>
+</body>
+</html>
