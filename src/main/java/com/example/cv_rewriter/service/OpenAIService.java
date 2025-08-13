@@ -13,13 +13,12 @@ import java.util.List;
 @Service
 public class OpenAIService {
 
-    @Value("${openai.api-key}")
+    @Value("${OPENAI_API_KEY}")
     private String apiKey;
 
     public String enhanceCv(String jobDescription, String cvText) {
         OpenAiService service = new OpenAiService(apiKey, Duration.ofSeconds(90));
 
-        // System message to define the assistant's behavior
         String systemPrompt = "You are a professional CV enhancement expert. Rewrite the user's CV to better match "
                 + "the job description while maintaining factual accuracy. Focus on: "
                 + "1. Optimizing keywords from the job description\n"
@@ -39,7 +38,7 @@ public class OpenAIService {
         );
 
         ChatCompletionRequest request = ChatCompletionRequest.builder()
-                .model("gpt-5-nano")  // Updated to GPT-5 :cite[1]:cite[2]
+                .model("gpt-5-nano")
                 .messages(messages)
                 .maxTokens(2500)
                 .temperature(0.7)
