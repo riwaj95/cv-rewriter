@@ -19,16 +19,18 @@ import java.io.InputStream;
 public class PdfService {
 
     public static final String PDF_TEXT_EXTRACT_ERROR = "Failed to extract text from PDF";
+    public static final String PDF_NO_FILE_ERROR = "Error: No file provided";
+    public static final String PDF_ONLY_PDF = "Error: Only PDF files are supported";
 
     public String extractText(MultipartFile file) {
         try {
             // Validate input
             if (file == null || file.isEmpty()) {
-                return "Error: No file provided";
+                return PDF_NO_FILE_ERROR;
             }
 
             if (!"application/pdf".equals(file.getContentType())) {
-                return "Error: Only PDF files are supported";
+                return PDF_ONLY_PDF;
             }
 
             // Extract text
@@ -50,7 +52,6 @@ public class PdfService {
             PDPage page = new PDPage(PDRectangle.A4);
             document.addPage(page);
 
-            // Create a filtered text that only contains supported characters
             StringBuilder filteredText = new StringBuilder();
             for (char c : text.toCharArray()) {
                 if (PDType1Font.HELVETICA.getEncoding().contains(c) || c == '\n') {
