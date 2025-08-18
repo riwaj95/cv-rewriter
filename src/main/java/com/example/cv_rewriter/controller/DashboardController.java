@@ -15,12 +15,10 @@ public class DashboardController {
             Object principal = authentication.getPrincipal();
 
             if (principal instanceof OAuth2User) {
-                // Handle OAuth2 users (Google login)
                 OAuth2User oauthUser = (OAuth2User) principal;
                 model.addAttribute("name", oauthUser.getAttribute("name"));
                 model.addAttribute("email", oauthUser.getAttribute("email"));
             } else {
-                // Handle form-based users
                 String username = authentication.getName();
                 model.addAttribute("name", username);
                 model.addAttribute("email", "No email available");
