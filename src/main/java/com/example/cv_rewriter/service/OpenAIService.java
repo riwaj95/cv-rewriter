@@ -38,7 +38,7 @@ public class OpenAIService {
         );
 
         ChatCompletionRequest request = ChatCompletionRequest.builder()
-                .model("gpt-5-nano")
+                .model("gpt-5")
                 .messages(messages)
                 .maxTokens(2500)
                 .temperature(0.7)
