@@ -1,5 +1,6 @@
 package com.example.cv_rewriter.service;
 
+import com.example.cv_rewriter.exceptions.PdfProcessingException;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.pdmodel.PDPage;
@@ -18,30 +19,18 @@ import java.io.InputStream;
 @Service
 public class PdfService {
 
-    public static final String PDF_TEXT_EXTRACT_ERROR = "Failed to extract text from PDF";
-    public static final String PDF_NO_FILE_ERROR = "Error: No file provided";
-    public static final String PDF_ONLY_PDF = "Error: Only PDF files are supported";
-
     public String extractText(MultipartFile file) {
-        try {
-            // Validate input
-            if (file == null || file.isEmpty()) {
-                return PDF_NO_FILE_ERROR;
-            }
-
-            if (!"application/pdf".equals(file.getContentType())) {
-                return PDF_ONLY_PDF;
-            }
-
-            // Extract text
-            try (InputStream is = file.getInputStream();
-                 PDDocument document = PDDocument.load(is)) {
-
-                return new PDFTextStripper().getText(document);
-            }
-
-        } catch (Exception e) {
-            return PDF_TEXT_EXTRACT_ERROR + e.getMessage();
+        if (file == null || file.isEmpty()) {
+            throw new PdfProcessingException("No file uploaded.");
+        }
+        if (!"application/pdf".equals(file.getContentType())) {
+            throw new PdfProcessingException("Only PDF files are supported.");
+        }
+        try (InputStream is = file.getInputStream();
+             PDDocument document = PDDocument.load(is)) {
+            return new PDFTextStripper().getText(document);
+        } catch (IOException e) {
+            throw new PdfProcessingException("Failed to read PDF content.");
         }
     }
 
