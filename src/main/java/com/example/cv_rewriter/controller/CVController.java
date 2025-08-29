@@ -1,5 +1,6 @@
 package com.example.cv_rewriter.controller;
 
+import com.example.cv_rewriter.model.CvProcessRequest;
 import com.example.cv_rewriter.service.OpenAIService;
 import com.example.cv_rewriter.service.PdfService;
 import org.springframework.http.HttpHeaders;
@@ -9,6 +10,7 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -25,16 +27,15 @@ public class CVController {
 
     @PostMapping("/process-cv")
     public ResponseEntity<byte[]> processCv(
-            @RequestParam("cvFile") MultipartFile cvFile,
-            @RequestParam("jobDescription") String jobDescription,
+            @RequestBody CvProcessRequest cvProcessRequest,
             @AuthenticationPrincipal OAuth2User user
     ) throws Exception {
 
         // 1. Extract CV text
-        String cvText = pdfService.extractText(cvFile);
+        String cvText = pdfService.extractText(cvProcessRequest.getCvFile());
 
         // 2. Enhance CV using OpenAI
-        String enhancedCv = openAiService.enhanceCv(jobDescription,cvText);
+        String enhancedCv = openAiService.enhanceCv(cvProcessRequest.getJobDescription(),cvText);
 
         // 3. Create new PDF
         byte[] pdfBytes = pdfService.generatePdf(enhancedCv);
