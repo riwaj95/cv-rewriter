@@ -15,4 +15,20 @@ public class CvProcessRequest {
 
     @NotBlank(message = "Job description cannot be empty")
     private String jobDescription;
+
+    public @NotNull(message = "CV file cannot be null") MultipartFile getCvFile() {
+        return cvFile;
+    }
+
+    public void setCvFile(@NotNull(message = "CV file cannot be null") MultipartFile cvFile) {
+        this.cvFile = cvFile;
+    }
+
+    public @NotBlank(message = "Job description cannot be empty") String getJobDescription() {
+        return jobDescription;
+    }
+
+    public void setJobDescription(@NotBlank(message = "Job description cannot be empty") String jobDescription) {
+        this.jobDescription = jobDescription;
+    }
 }

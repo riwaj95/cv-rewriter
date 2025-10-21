@@ -81,7 +81,6 @@ public class PdfService {
             document.save(baos);
             return baos.toByteArray();
         } catch (IOException e) {
-            log.error("Failed to generate PDF with preserved layout", e);
             throw new PdfProcessingException("Failed to generate PDF with preserved layout.");
         }
     }
@@ -165,13 +164,9 @@ public class PdfService {
         StringBuilder builder = new StringBuilder();
         for (int i = 0; i < text.length(); i++) {
             char c = text.charAt(i);
-            try {
-                if (font == null || font.hasGlyph(c)) {
+                if (font == null) {
                     builder.append(c);
                 }
-            } catch (IOException ignored) {
-                // Skip characters that cannot be rendered.
-            }
         }
         return builder.toString();
     }
@@ -198,7 +193,6 @@ public class PdfService {
             document.save(baos);
             return baos.toByteArray();
         } catch (IOException e) {
-            log.error("Failed to generate fallback PDF", e);
             throw new PdfProcessingException("Failed to generate PDF with preserved layout.");
         }
     }

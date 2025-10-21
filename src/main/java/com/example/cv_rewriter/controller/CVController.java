@@ -13,6 +13,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.multipart.MultipartFile;
@@ -33,7 +34,7 @@ public class CVController {
 
     @PostMapping("/process-cv")
     public ResponseEntity<byte[]> processCv(
-            @RequestBody CvProcessRequest cvProcessRequest,
+            @ModelAttribute CvProcessRequest cvProcessRequest,
             @AuthenticationPrincipal OAuth2User user
     ) throws Exception {
         MultipartFile cvFile = cvProcessRequest.getCvFile();
