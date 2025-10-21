@@ -14,13 +14,22 @@ public class SecurityConfig{
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-                .authorizeHttpRequests(auth -> {
-                    auth.requestMatchers("/").permitAll();
-                    auth.anyRequest().permitAll();
-                })
-                .formLogin(form -> form.defaultSuccessUrl("/dashboard",true))
+                .authorizeHttpRequests(auth -> auth
+                        .requestMatchers("/", "/login", "/oauth2/**", "/css/**", "/js/**", "/images/**").permitAll()
+                        .anyRequest().authenticated()
+                )
+                .formLogin(form -> form
+                        .loginPage("/login")
+                        .loginProcessingUrl("/login")
+                        .defaultSuccessUrl("/dashboard", true)
+                        .permitAll()
+                )
                 .oauth2Login(oauth -> oauth
-                        .defaultSuccessUrl("/dashboard", true)  // Ensure this is set
+                        .loginPage("/login")
+                        .defaultSuccessUrl("/dashboard", true)
+                )
+                .logout(logout -> logout
+                        .logoutSuccessUrl("/login?logout")
                 )
                 .csrf(Customizer.withDefaults());
 
