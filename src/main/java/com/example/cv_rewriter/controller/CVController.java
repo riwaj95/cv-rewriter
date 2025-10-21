@@ -38,7 +38,7 @@ public class CVController {
         String enhancedCv = openAiService.enhanceCv(cvProcessRequest.getJobDescription(),cvText);
 
         // 3. Create new PDF
-        byte[] pdfBytes = pdfService.generatePdf(enhancedCv);
+        byte[] pdfBytes = pdfService.generatePdf(cvProcessRequest.getCvFile(), enhancedCv);
 
         // 4. Return as downloadable file
         return ResponseEntity.ok()
