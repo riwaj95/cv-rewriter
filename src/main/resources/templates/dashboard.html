@@ -1,153 +1,454 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org">
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
 <head>
-    <title>Upload CV</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CV Rewriter Dashboard</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            max-width: 600px;
-            margin: 0 auto;
-            padding: 20px;
-            background-color: #f8f9fa;
+        :root {
+            --surface: #ffffff;
+            --surface-muted: #f3f4f6;
+            --text-primary: #111827;
+            --text-secondary: #4b5563;
+            --accent: #2563eb;
+            --accent-dark: #1d4ed8;
+            --danger: #dc2626;
+            --success: #059669;
+            --shadow: 0 20px 45px -20px rgba(15, 23, 42, 0.35);
+            --radius-lg: 20px;
         }
-        .header {
-            margin-bottom: 30px;
-            padding-bottom: 15px;
-            border-bottom: 1px solid #ddd;
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+            font-family: 'Inter', 'Segoe UI', Roboto, sans-serif;
+            color: var(--text-primary);
+            background: radial-gradient(circle at top, #dbeafe, #f8fafc 45%);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .page-wrapper {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            padding: 40px 24px 64px;
+        }
+
+        .page-container {
+            max-width: 1080px;
+            margin: 0 auto;
+            width: 100%;
+        }
+
+        .page-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 24px;
+            margin-bottom: 32px;
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 18px;
+        }
+
+        .brand-mark {
+            width: 52px;
+            height: 52px;
+            border-radius: 16px;
+            background: linear-gradient(135deg, var(--accent), #60a5fa);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            color: white;
+            font-size: 18px;
+            box-shadow: var(--shadow);
+        }
+
+        .brand h1 {
+            margin: 0;
+            font-size: 28px;
+            font-weight: 700;
+        }
+
+        .brand p {
+            margin: 6px 0 0;
+            color: var(--text-secondary);
+        }
+
+        .user-section {
+            text-align: right;
+            background: rgba(255, 255, 255, 0.75);
+            backdrop-filter: blur(6px);
+            border-radius: 16px;
+            padding: 16px 20px;
+            box-shadow: 0 10px 35px -25px rgba(15, 23, 42, 0.45);
+        }
+
+        .user-info {
+            margin-bottom: 12px;
+            font-size: 14px;
+            color: var(--text-secondary);
+        }
+
+        .logout-btn {
+            background: var(--danger);
+            color: white;
+            padding: 10px 16px;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
+        }
+
+        .logout-btn:hover,
+        .logout-btn:focus-visible {
+            outline: none;
+            background: #b91c1c;
+            box-shadow: 0 16px 30px -20px rgba(220, 38, 38, 0.9);
+            transform: translateY(-1px);
+        }
+
+        .content-grid {
+            display: grid;
+            gap: 28px;
+            grid-template-columns: minmax(0, 1fr);
+        }
+
+        .card {
+            background: var(--surface);
+            border-radius: var(--radius-lg);
+            padding: 36px;
+            box-shadow: var(--shadow);
+        }
+
+        .card-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
+            margin-bottom: 24px;
         }
-        .header h1 {
+
+        .card-header h2 {
             margin: 0;
+            font-size: 22px;
+            font-weight: 600;
         }
-        .container {
-            background: white;
-            padding: 30px;
-            border-radius: 8px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+
+        .card-header span {
+            color: var(--text-secondary);
+            font-size: 14px;
         }
+
         .form-group {
-            margin-bottom: 20px;
+            margin-bottom: 24px;
         }
+
         label {
             display: block;
-            margin-bottom: 8px;
-            font-weight: bold;
+            margin-bottom: 10px;
+            font-weight: 600;
+            font-size: 15px;
         }
+
         textarea {
             width: 100%;
-            height: 150px;
-            padding: 10px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
+            min-height: 160px;
+            padding: 14px 16px;
+            border: 1px solid #d1d5db;
+            border-radius: 12px;
+            resize: vertical;
+            font-size: 15px;
+            line-height: 1.6;
+            transition: border-color 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        textarea:focus {
+            outline: none;
+            border-color: var(--accent);
+            box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.12);
+        }
+
+        .file-upload {
+            position: relative;
+            border: 2px dashed #cbd5f5;
+            border-radius: 16px;
+            padding: 32px;
+            text-align: center;
+            background: linear-gradient(145deg, rgba(148, 163, 184, 0.1), rgba(148, 163, 184, 0.05));
+        }
+
+        .file-upload input[type="file"] {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            opacity: 0;
+            cursor: pointer;
+        }
+
+        .file-upload strong {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 6px;
+        }
+
+        .file-upload span {
+            color: var(--text-secondary);
+            font-size: 14px;
+        }
+
+        .primary-btn {
+            background: var(--accent);
+            color: white;
+            padding: 14px 28px;
+            border: none;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.18s ease, box-shadow 0.18s ease, background 0.18s ease;
+        }
+
+        .primary-btn:hover,
+        .primary-btn:focus-visible {
+            outline: none;
+            background: var(--accent-dark);
+            box-shadow: 0 18px 40px -24px rgba(37, 99, 235, 0.8);
+            transform: translateY(-1px);
+        }
+
+        .success,
+        .error-message {
+            margin-top: 20px;
+            padding: 16px 18px;
+            border-radius: 14px;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .success {
+            background: rgba(16, 185, 129, 0.12);
+            color: var(--success);
+        }
+
+        .error-message {
+            background: rgba(220, 38, 38, 0.12);
+            color: var(--danger);
+        }
+
+        .result-section {
+            margin-top: 32px;
+        }
+
+        .result-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        .result-box {
+            position: relative;
+            background: var(--surface-muted);
+            border-radius: 16px;
+            padding: 20px;
+            box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.6);
+        }
+
+        .result-box textarea {
+            background: transparent;
+            border: none;
+            min-height: 280px;
+            padding: 0;
             resize: vertical;
         }
-        input[type="file"] {
-            width: 100%;
-            padding: 10px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            background: #f8f9fa;
-        }
-        button {
-            background: #4285F4;
-            color: white;
-            padding: 12px 25px;
+
+        .result-box textarea:focus {
+            outline: none;
             border: none;
-            border-radius: 4px;
+            box-shadow: none;
+        }
+
+        .ghost-btn {
+            background: transparent;
+            color: var(--accent);
+            border: 1px solid rgba(37, 99, 235, 0.4);
+            padding: 10px 18px;
+            border-radius: 10px;
+            font-weight: 600;
             cursor: pointer;
-            font-size: 16px;
+            transition: background 0.15s ease, color 0.15s ease, transform 0.15s ease;
         }
-        .success {
-            color: #0f9d58;
-            margin-top: 15px;
-            padding: 10px;
-            background: #e6f4ea;
-            border-radius: 4px;
+
+        .ghost-btn:hover,
+        .ghost-btn:focus-visible {
+            outline: none;
+            background: rgba(37, 99, 235, 0.08);
+            color: var(--accent-dark);
+            transform: translateY(-1px);
         }
-        .user-info {
-            font-size: 14px;
-            color: #5f6368;
-            margin-bottom: 5px;
+
+        .helper-text {
+            font-size: 13px;
+            color: var(--text-secondary);
+            margin-top: 8px;
         }
-        .logout-btn {
-            background: #ea4335;
-            color: white;
-            padding: 8px 15px;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            text-decoration: none;
-            font-size: 14px;
+
+        .copy-feedback {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 13px;
+            color: var(--success);
+            opacity: 0;
+            transform: translateY(6px);
+            transition: opacity 0.2s ease, transform 0.2s ease;
         }
-        .user-section {
-            text-align: right;
+
+        .copy-feedback.is-visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        @media (max-width: 768px) {
+            .page-wrapper {
+                padding: 24px 18px 40px;
+            }
+
+            .page-header {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .user-section {
+                text-align: left;
+            }
+
+            .card {
+                padding: 28px 24px;
+            }
         }
     </style>
 </head>
-<div class="header">
-    <div>
-        <h1>Upload Your CV</h1>
-        <div class="user-info">
-            Logged in as: <span th:text="${name}">User</span>
-            <span th:if="${email}" th:text="'(' + ${email} + ')'"></span>
-        </div>
-    </div>
-    <div class="user-section">
-        <!-- Fixed: Add CSRF token to logout form -->
-        <form th:action="@{/logout}" method="post">
-            <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
-            <button type="submit" class="logout-btn">Logout</button>
-        </form>
-    </div>
-</div>
-
-<div class="container">
-    <!-- Add error display -->
-    <div th:if="${error}" class="error-message">
-        <p th:text="${error}"></p>
-    </div>
-
-    <!-- Fixed: Add CSRF token to CV processing form -->
-    <form method="post" th:action="@{/process-cv}" enctype="multipart/form-data">
-        <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
-
-        <div class="form-group">
-            <label for="jobDescription">Job Description:</label>
-            <textarea id="jobDescription" name="jobDescription" placeholder="Paste job description here..." required></textarea>
-        </div>
-
-        <div class="form-group">
-            <label for="cvFile">Upload Your CV (PDF only):</label>
-            <input type="file" id="cvFile" name="cvFile" accept=".pdf" required>
-        </div>
-
-        <button type="submit">Process CV</button>
-
-        <!-- Success message -->
-        <div th:if="${param.success}" class="success">
-            CV received successfully! Processing would happen here.
-        </div>
-
-        <!-- Add result display area -->
-        <div th:if="${rewrittenCV}" class="result-section">
-            <h3>Processed CV:</h3>
-            <div class="result-box">
-                <textarea readonly th:text="${rewrittenCV}" style="width:100%; height:300px;"></textarea>
-                <button onclick="copyToClipboard()">Copy to Clipboard</button>
+<body>
+<div class="page-wrapper">
+    <div class="page-container">
+        <header class="page-header">
+            <div class="brand">
+                <div class="brand-mark">CV</div>
+                <div>
+                    <h1>Tailor Your CV with Confidence</h1>
+                    <p>Upload your resume, paste the job description, and let us align your experience perfectly.</p>
+                </div>
             </div>
-        </div>
-    </form>
+            <div class="user-section">
+                <div class="user-info">
+                    Logged in as <strong th:text="${name}">User</strong>
+                    <span th:if="${email}" th:text="'· ' + ${email}"></span>
+                </div>
+                <form th:action="@{/logout}" method="post">
+                    <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+                    <button type="submit" class="logout-btn">Sign out</button>
+                </form>
+            </div>
+        </header>
+
+        <section class="content-grid">
+            <article class="card">
+                <div class="card-header">
+                    <div>
+                        <h2>CV Optimisation</h2>
+                        <span>Enhance the impact of your experience for the role you want.</span>
+                    </div>
+                </div>
+
+                <div th:if="${error}" class="error-message">
+                    <span th:text="${error}"></span>
+                </div>
+
+                <form method="post" th:action="@{/process-cv}" enctype="multipart/form-data">
+                    <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+
+                    <div class="form-group">
+                        <label for="jobDescription">Job Description</label>
+                        <textarea id="jobDescription" name="jobDescription" placeholder="Paste the target job description here..." required></textarea>
+                        <p class="helper-text">We use this information to highlight the most relevant achievements in your CV.</p>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="cvFile">Upload Your CV (PDF only)</label>
+                        <div class="file-upload">
+                            <input type="file" id="cvFile" name="cvFile" accept=".pdf" required>
+                            <strong>Drag &amp; drop your file or click to browse</strong>
+                            <span>Maximum size 10MB. Accepted format: PDF.</span>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="primary-btn">Process CV</button>
+
+                    <div th:if="${param.success}" class="success">
+                        CV received successfully! Processing would happen here.
+                    </div>
+
+                    <div th:if="${rewrittenCV}" class="result-section">
+                        <div class="result-header">
+                            <h3>Processed CV</h3>
+                            <div>
+                                <button type="button" class="ghost-btn" onclick="copyToClipboard()">Copy to clipboard</button>
+                                <span class="copy-feedback" id="copyFeedback">Copied!</span>
+                            </div>
+                        </div>
+                        <div class="result-box">
+                            <textarea readonly th:text="${rewrittenCV}"></textarea>
+                        </div>
+                    </div>
+                </form>
+            </article>
+        </section>
+    </div>
 </div>
 
-<!-- Add copy functionality script -->
 <script>
     function copyToClipboard() {
         const textarea = document.querySelector('.result-box textarea');
-        textarea.select();
-        document.execCommand('copy');
-        alert('Copied to clipboard!');
+        const feedback = document.getElementById('copyFeedback');
+
+        if (!textarea) {
+            return;
+        }
+
+        if (navigator.clipboard && window.isSecureContext) {
+            navigator.clipboard.writeText(textarea.value).then(showFeedback);
+        } else {
+            textarea.select();
+            document.execCommand('copy');
+            showFeedback();
+        }
+
+        function showFeedback() {
+            if (!feedback) {
+                return;
+            }
+            feedback.classList.add('is-visible');
+            setTimeout(() => feedback.classList.remove('is-visible'), 2000);
+        }
     }
 </script>
+</body>
 </html>
