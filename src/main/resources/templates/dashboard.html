@@ -238,18 +238,37 @@
             border-radius: 14px;
             font-size: 14px;
             display: flex;
-            align-items: center;
             gap: 12px;
         }
 
         .success {
             background: rgba(16, 185, 129, 0.12);
             color: var(--success);
+            align-items: center;
         }
 
         .error-message {
             background: rgba(220, 38, 38, 0.12);
             color: var(--danger);
+            flex-direction: column;
+            align-items: flex-start;
+        }
+
+        .error-actions {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 12px;
+            margin-top: 4px;
+        }
+
+        .error-actions form {
+            margin: 0;
+        }
+
+        .error-helper-text {
+            font-size: 13px;
+            color: var(--text-secondary);
         }
 
         .result-section {
@@ -380,6 +399,12 @@
 
                 <div th:if="${error}" class="error-message">
                     <span th:text="${error}"></span>
+                    <div th:if="${downloadAvailable}" class="error-actions">
+                        <form method="get" th:action="@{/download-original}">
+                            <button type="submit" class="ghost-btn">Download original CV</button>
+                        </form>
+                        <p class="error-helper-text">We'll keep your original file available for download during this session.</p>
+                    </div>
                 </div>
 
                 <form method="post" th:action="@{/process-cv}" enctype="multipart/form-data">
