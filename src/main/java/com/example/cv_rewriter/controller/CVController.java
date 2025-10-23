@@ -3,6 +3,7 @@ package com.example.cv_rewriter.controller;
 import com.example.cv_rewriter.model.CvProcessRequest;
 import com.example.cv_rewriter.service.OpenAIService;
 import com.example.cv_rewriter.service.PdfService;
+import jakarta.servlet.http.HttpSession;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.ContentDisposition;
@@ -13,16 +14,22 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+import retrofit2.HttpException;
 
 import java.io.IOException;
 
 @Controller
 public class CVController {
     private static final Logger log = LoggerFactory.getLogger(CVController.class);
+
+    private static final String ORIGINAL_FILE_BYTES_ATTR = "originalCvBytes";
+    private static final String ORIGINAL_FILE_NAME_ATTR = "originalCvFilename";
+    private static final String ORIGINAL_FILE_CONTENT_TYPE_ATTR = "originalCvContentType";
 
     private final OpenAIService openAiService;
     private final PdfService pdfService;
@@ -33,9 +40,11 @@ public class CVController {
     }
 
     @PostMapping("/process-cv")
-    public ResponseEntity<byte[]> processCv(
+    public Object processCv(
             @ModelAttribute CvProcessRequest cvProcessRequest,
-            @AuthenticationPrincipal OAuth2User user
+            @AuthenticationPrincipal OAuth2User user,
+            RedirectAttributes redirectAttributes,
+            HttpSession session
     ) throws Exception {
         MultipartFile cvFile = cvProcessRequest.getCvFile();
 
@@ -43,6 +52,8 @@ public class CVController {
             String cvText = pdfService.extractText(cvFile);
             String enhancedCv = openAiService.enhanceCv(cvProcessRequest.getJobDescription(), cvText);
             byte[] pdfBytes = pdfService.generatePdf(cvFile, enhancedCv);
+
+            clearStoredOriginalFile(session);
 
             return ResponseEntity.ok()
                     .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=enhanced_cv.pdf")
@@ -52,12 +63,34 @@ public class CVController {
             log.error("Failed to process CV with OpenAI. Returning original file instead.", ex);
             byte[] originalFileBytes = getOriginalFileBytes(cvFile);
 
+            if (isQuotaError(ex) && originalFileBytes != null) {
+                storeOriginalFileInSession(session, cvFile, originalFileBytes);
+                redirectAttributes.addFlashAttribute("error", "We are currently out of quota. You can download your original CV or try again later.");
+                redirectAttributes.addFlashAttribute("downloadAvailable", true);
+                return "redirect:/dashboard";
+            }
+
             if (originalFileBytes != null) {
+                clearStoredOriginalFile(session);
                 return buildOriginalFileResponse(cvFile, originalFileBytes);
             }
 
             throw ex;
         }
+    }
+
+    @GetMapping("/download-original")
+    public ResponseEntity<byte[]> downloadOriginalCv(HttpSession session) {
+        byte[] originalFileBytes = (byte[]) session.getAttribute(ORIGINAL_FILE_BYTES_ATTR);
+        if (originalFileBytes == null) {
+            return ResponseEntity.notFound().build();
+        }
+
+        String filename = (String) session.getAttribute(ORIGINAL_FILE_NAME_ATTR);
+        String contentType = (String) session.getAttribute(ORIGINAL_FILE_CONTENT_TYPE_ATTR);
+        clearStoredOriginalFile(session);
+
+        return buildOriginalFileResponse(filename, contentType, originalFileBytes);
     }
 
     private byte[] getOriginalFileBytes(MultipartFile file) {
@@ -78,22 +111,61 @@ public class CVController {
                 ? file.getOriginalFilename()
                 : "original_cv.pdf";
 
+        String contentType = (file != null) ? file.getContentType() : null;
+
+        return buildOriginalFileResponse(filename, contentType, body);
+    }
+
+    private ResponseEntity<byte[]> buildOriginalFileResponse(String filename, String contentType, byte[] body) {
+        String effectiveFilename = (filename != null && !filename.isBlank()) ? filename : "original_cv.pdf";
+
         MediaType mediaType = MediaType.APPLICATION_PDF;
-        if (file != null && file.getContentType() != null) {
+        if (contentType != null) {
             try {
-                mediaType = MediaType.parseMediaType(file.getContentType());
+                mediaType = MediaType.parseMediaType(contentType);
             } catch (InvalidMediaTypeException ignored) {
                 mediaType = MediaType.APPLICATION_PDF;
             }
         }
 
         ContentDisposition contentDisposition = ContentDisposition.attachment()
-                .filename(filename)
+                .filename(effectiveFilename)
                 .build();
 
         return ResponseEntity.ok()
                 .header(HttpHeaders.CONTENT_DISPOSITION, contentDisposition.toString())
                 .contentType(mediaType)
                 .body(body);
+    }
+
+    private void storeOriginalFileInSession(HttpSession session, MultipartFile file, byte[] originalFileBytes) {
+        session.setAttribute(ORIGINAL_FILE_BYTES_ATTR, originalFileBytes);
+        session.setAttribute(ORIGINAL_FILE_NAME_ATTR, file != null ? file.getOriginalFilename() : null);
+        session.setAttribute(ORIGINAL_FILE_CONTENT_TYPE_ATTR, file != null ? file.getContentType() : null);
+    }
+
+    private void clearStoredOriginalFile(HttpSession session) {
+        session.removeAttribute(ORIGINAL_FILE_BYTES_ATTR);
+        session.removeAttribute(ORIGINAL_FILE_NAME_ATTR);
+        session.removeAttribute(ORIGINAL_FILE_CONTENT_TYPE_ATTR);
+    }
+
+    private boolean isQuotaError(Throwable throwable) {
+        Throwable current = throwable;
+        while (current != null) {
+            if (current instanceof HttpException httpException) {
+                if (httpException.code() == 500 && messageIndicatesQuota(httpException.getMessage())) {
+                    return true;
+                }
+            } else if (messageIndicatesQuota(current.getMessage())) {
+                return true;
+            }
+            current = current.getCause();
+        }
+        return false;
+    }
+
+    private boolean messageIndicatesQuota(String message) {
+        return message != null && message.toLowerCase().contains("quota");
     }
 }
