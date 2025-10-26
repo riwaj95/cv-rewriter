@@ -1,16 +1,12 @@
 package com.example.cv_rewriter.controller;
 
 import com.example.cv_rewriter.model.CvProcessRequest;
-import com.example.cv_rewriter.service.OpenAIService;
-import com.example.cv_rewriter.service.PdfService;
+import com.example.cv_rewriter.service.FeedbackReportService;
+import com.example.cv_rewriter.service.OllamaService;
 import jakarta.servlet.http.HttpSession;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.http.ContentDisposition;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.InvalidMediaTypeException;
-import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
+import org.springframework.http.*;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.stereotype.Controller;
@@ -31,12 +27,12 @@ public class CVController {
     private static final String ORIGINAL_FILE_NAME_ATTR = "originalCvFilename";
     private static final String ORIGINAL_FILE_CONTENT_TYPE_ATTR = "originalCvContentType";
 
-    private final OpenAIService openAiService;
-    private final PdfService pdfService;
+    private final OllamaService ollamaService;
+    private final FeedbackReportService feedbackReportService;
 
-    public CVController(OpenAIService openAiService, PdfService pdfService) {
-        this.openAiService = openAiService;
-        this.pdfService = pdfService;
+    public CVController(OllamaService ollamaService, FeedbackReportService feedbackReportService) {
+        this.ollamaService = ollamaService;
+        this.feedbackReportService = feedbackReportService;
     }
 
     @PostMapping("/process-cv")
@@ -49,9 +45,9 @@ public class CVController {
         MultipartFile cvFile = cvProcessRequest.getCvFile();
 
         try {
-            String cvText = pdfService.extractText(cvFile);
-            String enhancedCv = openAiService.enhanceCv(cvProcessRequest.getJobDescription(), cvText);
-            byte[] pdfBytes = pdfService.generatePdf(cvFile, enhancedCv);
+            String cvText = feedbackReportService.extractCvText(cvFile);
+            String feedbackReport = ollamaService.buildFeedbackReport(cvProcessRequest.getJobDescription(), cvText);
+            byte[] pdfBytes = feedbackReportService.renderFeedbackReportPdf(feedbackReport);
 
             clearStoredOriginalFile(session);
 
