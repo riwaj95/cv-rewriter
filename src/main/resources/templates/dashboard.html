@@ -25,6 +25,10 @@
             box-sizing: border-box;
         }
 
+        [hidden] {
+            display: none !important;
+        }
+
         body {
             margin: 0;
             min-height: 100vh;
@@ -329,6 +333,61 @@
             margin-top: 8px;
         }
 
+        .loading-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(15, 23, 42, 0.55);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 24px;
+            z-index: 999;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.2s ease;
+            backdrop-filter: blur(4px);
+        }
+
+        .loading-overlay.is-visible {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .loading-content {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 18px;
+            padding: 28px 32px;
+            box-shadow: 0 25px 60px -30px rgba(15, 23, 42, 0.55);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 18px;
+            max-width: 320px;
+            text-align: center;
+        }
+
+        .loading-spinner {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            border: 4px solid rgba(37, 99, 235, 0.25);
+            border-top-color: var(--accent);
+            animation: spin 0.8s linear infinite;
+        }
+
+        .loading-text {
+            margin: 0;
+            font-size: 16px;
+            color: var(--text-primary);
+            font-weight: 500;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
         .copy-feedback {
             display: inline-flex;
             align-items: center;
@@ -423,9 +482,7 @@
                             <strong>Drag &amp; drop your file or click to browse</strong>
                             <span>Maximum size 10MB. Accepted format: PDF.</span>
                         </div>
-                        <div id="uploadSuccessMessage" class="success" role="status" aria-live="polite" hidden>
-                            CV uploaded successfully!
-                        </div>
+                        <div id="uploadSuccessMessage" class="success" role="status" aria-live="polite" hidden></div>
                     </div>
 
                     <button type="submit" class="primary-btn">Process CV</button>
@@ -449,6 +506,13 @@
                 </form>
             </article>
         </section>
+    </div>
+</div>
+
+<div id="processingOverlay" class="loading-overlay" role="alert" aria-live="assertive" hidden>
+    <div class="loading-content">
+        <div class="loading-spinner" aria-hidden="true"></div>
+        <p class="loading-text">Processing your CV. This may take a few moments...</p>
     </div>
 </div>
 
@@ -481,29 +545,47 @@
     document.addEventListener('DOMContentLoaded', () => {
         const fileInput = document.getElementById('cvFile');
         const uploadMessage = document.getElementById('uploadSuccessMessage');
+        const processingOverlay = document.getElementById('processingOverlay');
+        const processingForm = document.querySelector('form[method="post"][enctype="multipart/form-data"]');
+        const submitButton = processingForm ? processingForm.querySelector('.primary-btn') : null;
         let uploadMessageTimeout;
 
-        if (!fileInput || !uploadMessage) {
-            return;
+        if (fileInput && uploadMessage) {
+            uploadMessage.hidden = true;
+            uploadMessage.textContent = '';
+
+            fileInput.addEventListener('change', () => {
+                if (fileInput.files && fileInput.files.length > 0) {
+                    const fileName = fileInput.files[0].name;
+                    uploadMessage.textContent = `${fileName} uploaded successfully!`;
+                    uploadMessage.hidden = false;
+
+                    if (uploadMessageTimeout) {
+                        clearTimeout(uploadMessageTimeout);
+                    }
+
+                    uploadMessageTimeout = setTimeout(() => {
+                        uploadMessage.hidden = true;
+                        uploadMessage.textContent = '';
+                    }, 4000);
+                } else {
+                    uploadMessage.hidden = true;
+                    uploadMessage.textContent = '';
+                }
+            });
         }
 
-        fileInput.addEventListener('change', () => {
-            if (fileInput.files && fileInput.files.length > 0) {
-                const fileName = fileInput.files[0].name;
-                uploadMessage.textContent = `${fileName} uploaded successfully!`;
-                uploadMessage.hidden = false;
+        if (processingOverlay && processingForm && submitButton) {
+            processingForm.addEventListener('submit', () => {
+                submitButton.disabled = true;
+                submitButton.textContent = 'Processing...';
+                processingOverlay.hidden = false;
 
-                if (uploadMessageTimeout) {
-                    clearTimeout(uploadMessageTimeout);
-                }
-
-                uploadMessageTimeout = setTimeout(() => {
-                    uploadMessage.hidden = true;
-                }, 4000);
-            } else {
-                uploadMessage.hidden = true;
-            }
-        });
+                requestAnimationFrame(() => {
+                    processingOverlay.classList.add('is-visible');
+                });
+            });
+        }
     });
 </script>
 </body>
