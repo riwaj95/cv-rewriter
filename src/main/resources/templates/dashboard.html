@@ -576,14 +576,91 @@
         }
 
         if (processingOverlay && processingForm && submitButton) {
-            processingForm.addEventListener('submit', () => {
+            const originalButtonText = submitButton.textContent;
+            let overlayHideTimeout;
+
+            const resetProcessingState = ({ showError = false } = {}) => {
+                if (overlayHideTimeout) {
+                    clearTimeout(overlayHideTimeout);
+                }
+                submitButton.disabled = false;
+                submitButton.textContent = originalButtonText;
+                processingOverlay.classList.remove('is-visible');
+
+                overlayHideTimeout = setTimeout(() => {
+                    processingOverlay.hidden = true;
+                }, 200);
+
+                if (showError) {
+                    alert('Sorry, something went wrong while processing your CV. Please try again.');
+                }
+            };
+
+            const extractFilename = (contentDisposition) => {
+                if (!contentDisposition) {
+                    return null;
+                }
+
+                const utf8Match = contentDisposition.match(/filename\*=UTF-8''([^;]+)/i);
+                if (utf8Match && utf8Match[1]) {
+                    return decodeURIComponent(utf8Match[1]);
+                }
+
+                const asciiMatch = contentDisposition.match(/filename="?([^";]+)"?/i);
+                if (asciiMatch && asciiMatch[1]) {
+                    return asciiMatch[1];
+                }
+
+                return null;
+            };
+
+            processingForm.addEventListener('submit', async (event) => {
+                event.preventDefault();
+
                 submitButton.disabled = true;
                 submitButton.textContent = 'Processing...';
+                if (overlayHideTimeout) {
+                    clearTimeout(overlayHideTimeout);
+                }
                 processingOverlay.hidden = false;
 
                 requestAnimationFrame(() => {
                     processingOverlay.classList.add('is-visible');
                 });
+
+                try {
+                    const response = await fetch(processingForm.action, {
+                        method: processingForm.method || 'POST',
+                        body: new FormData(processingForm)
+                    });
+
+                    if (response.redirected) {
+                        resetProcessingState();
+                        window.location.href = response.url;
+                        return;
+                    }
+
+                    if (!response.ok) {
+                        throw new Error(`Request failed with status ${response.status}`);
+                    }
+
+                    const blob = await response.blob();
+                    const downloadUrl = window.URL.createObjectURL(blob);
+                    const filename = extractFilename(response.headers.get('Content-Disposition')) || 'enhanced_cv.pdf';
+
+                    const tempLink = document.createElement('a');
+                    tempLink.href = downloadUrl;
+                    tempLink.download = filename;
+                    document.body.appendChild(tempLink);
+                    tempLink.click();
+                    tempLink.remove();
+
+                    window.URL.revokeObjectURL(downloadUrl);
+                    resetProcessingState();
+                } catch (error) {
+                    console.error('Failed to process CV', error);
+                    resetProcessingState({ showError: true });
+                }
             });
         }
     });
