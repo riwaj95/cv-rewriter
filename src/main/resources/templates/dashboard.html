@@ -157,6 +157,70 @@
             font-size: 14px;
         }
 
+        .history-table-wrapper {
+            overflow-x: auto;
+        }
+
+        .history-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .history-table th,
+        .history-table td {
+            padding: 12px 16px;
+            text-align: left;
+            border-bottom: 1px solid #e5e7eb;
+            font-size: 14px;
+            vertical-align: top;
+        }
+
+        .history-table th {
+            font-weight: 600;
+            color: var(--text-secondary);
+            font-size: 12px;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+        }
+
+        .history-table tbody tr:last-child td {
+            border-bottom: none;
+        }
+
+        .history-empty {
+            margin: 8px 0 0;
+            color: var(--text-secondary);
+            font-size: 14px;
+        }
+
+        .history-job-preview {
+            color: var(--text-primary);
+            font-weight: 500;
+        }
+
+        details.history-details summary {
+            cursor: pointer;
+            color: var(--accent);
+            font-weight: 600;
+            outline: none;
+        }
+
+        details.history-details summary:focus-visible {
+            text-decoration: underline;
+        }
+
+        details.history-details pre {
+            margin: 12px 0 0;
+            padding: 16px;
+            border-radius: 12px;
+            background: var(--surface-muted);
+            color: var(--text-secondary);
+            font-size: 13px;
+            line-height: 1.6;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+
         .form-group {
             margin-bottom: 24px;
         }
@@ -504,6 +568,46 @@
                         </div>
                     </div>
                 </form>
+            </article>
+
+            <article class="card">
+                <div class="card-header">
+                    <div>
+                        <h2>Recent Feedback Reports</h2>
+                        <span>Your last ten processed CVs are stored securely for reference.</span>
+                    </div>
+                </div>
+
+                <div th:if="${#lists.isEmpty(history)}">
+                    <p class="history-empty">No feedback reports yet. Process a CV to start building your history.</p>
+                </div>
+
+                <div th:if="${!#lists.isEmpty(history)}" class="history-table-wrapper">
+                    <table class="history-table">
+                        <thead>
+                        <tr>
+                            <th scope="col">Processed</th>
+                            <th scope="col">Job Description Focus</th>
+                            <th scope="col">Feedback Report</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <tr th:each="record : ${history}">
+                            <td th:text="${#temporals.format(record.createdAt, 'dd MMM yyyy HH:mm')} + ' UTC'"></td>
+                            <td>
+                                <div class="history-job-preview"
+                                     th:text="${#strings.abbreviate(record.jobDescription, 120)}"></div>
+                            </td>
+                            <td>
+                                <details class="history-details">
+                                    <summary>View feedback</summary>
+                                    <pre th:text="${record.feedbackReport}"></pre>
+                                </details>
+                            </td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
             </article>
         </section>
     </div>

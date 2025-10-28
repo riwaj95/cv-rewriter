@@ -1,6 +1,7 @@
 package com.example.cv_rewriter.controller;
 
 import com.example.cv_rewriter.model.CvProcessRequest;
+import com.example.cv_rewriter.service.CvProcessRecordService;
 import com.example.cv_rewriter.service.FeedbackReportService;
 import com.example.cv_rewriter.service.OllamaService;
 import jakarta.servlet.http.HttpSession;
@@ -29,10 +30,16 @@ public class CVController {
 
     private final OllamaService ollamaService;
     private final FeedbackReportService feedbackReportService;
+    private final CvProcessRecordService cvProcessRecordService;
 
-    public CVController(OllamaService ollamaService, FeedbackReportService feedbackReportService) {
+    public CVController(
+            OllamaService ollamaService,
+            FeedbackReportService feedbackReportService,
+            CvProcessRecordService cvProcessRecordService
+    ) {
         this.ollamaService = ollamaService;
         this.feedbackReportService = feedbackReportService;
+        this.cvProcessRecordService = cvProcessRecordService;
     }
 
     @PostMapping("/process-cv")
@@ -48,6 +55,8 @@ public class CVController {
             String cvText = feedbackReportService.extractCvText(cvFile);
             String feedbackReport = ollamaService.buildFeedbackReport(cvProcessRequest.getJobDescription(), cvText);
             byte[] pdfBytes = feedbackReportService.renderFeedbackReportPdf(feedbackReport);
+
+            recordSuccessfulProcessing(user, cvProcessRequest, feedbackReport);
 
             clearStoredOriginalFile(session);
 
@@ -73,6 +82,24 @@ public class CVController {
 
             throw ex;
         }
+    }
+
+    private void recordSuccessfulProcessing(OAuth2User user, CvProcessRequest request, String feedbackReport) {
+        try {
+            String email = userAttribute(user, "email");
+            String name = userAttribute(user, "name");
+            cvProcessRecordService.saveSuccessfulProcessing(email, name, request.getJobDescription(), feedbackReport);
+        } catch (Exception exception) {
+            log.warn("Failed to persist CV processing history", exception);
+        }
+    }
+
+    private String userAttribute(OAuth2User user, String attributeName) {
+        if (user == null || attributeName == null) {
+            return null;
+        }
+        Object attributeValue = user.getAttribute(attributeName);
+        return attributeValue != null ? attributeValue.toString() : null;
     }
 
     @GetMapping("/download-original")
